@@ -1,0 +1,20 @@
+{{ if .Values.configMaps.enabled }}
+{{ if .Values.configMaps.keyBase.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMaps.keyBase.configName }}
+data: {{ toYaml .Values.configMaps.keyBase.content | nindent 2 }}
+---
+{{ end }}
+{{ if .Values.configMaps.fileConfig.enabled }}
+{{ range .Values.configMaps.fileConfig.files }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+ name: {{ .name }}
+data: {{ .data | nindent 2}}
+---
+{{ end }}
+{{ end }}
+{{ end }}

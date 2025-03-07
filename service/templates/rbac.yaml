@@ -1,0 +1,6 @@
+{{ if .Values.rBAC.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata: 
+  name: {{ .Values.rBAC.name }}
+{{ end }}

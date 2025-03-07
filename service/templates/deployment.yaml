@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  labels:
+    app: {{ .Values.deployment.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.name }}
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.name }}
+    spec:
+      # revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+      {{ if .Values.rBAC.enabled }}
+      serviceAccountName: {{ .Values.rBAC.name }}
+      {{ end }}
+      securityContext:
+      {{ toYaml .Values.securityContext | nindent 8 }}
+      {{ if .Values.deployment.initContainer.enabled }}
+      initContainers:
+        name: {{ .Values.deployment.initContainer.name }}
+        image: {{ .Values.deployment.initContainer.image }}
+        command: {{ .Values.deployment.initContainer.command }}
+        {{ if .Values.deployment.initEnv.enabled }}
+        env:
+        {{ range .Values.deployment.initEnv.envLists }}
+        {{ if .valueFrom }}
+        - name: {{ .envName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .valueFrom.secretKeyRef.secretName }}
+              key: {{ .valueFrom.secretKeyRef.key }}
+        {{ end }}
+        {{ if .value }}
+        - name: {{ .envName }}
+          value: {{ quote .value }}
+        {{ end }}       
+        {{ end }}
+        {{ end }}
+      {{ end }}
+      containers:
+        - name: {{ .Values.deployment.name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{ if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{ if .Values.readinessProbe.httpGet.enabled }}
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            {{ end }}
+            {{ if .Values.readinessProbe.command.enabled }}
+              exec:
+                command: {{ .Values.readinessProbe.command.data }}
+            {{ end }}
+          {{ end }}
+          {{ if .Values.livenessProbe.enabed }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: {{ .Values.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initDelay }}
+            periodSeconds: {{ .Values.livenessProbe.period }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeout }}
+          {{ end }}
+          resources:
+          {{ toYaml .Values.resources | nindent 12 }}
+          ports:
+            {{ range .Values.portLists }}
+            - containerPort: {{ .port }}
+              protocol: {{ .protocol }}
+              name: {{ .name }}
+            {{ end }}
+          resources:
+            {{ toYaml .Values.resources | nindent 14 }}
+          {{ if .Values.deployment.serviceEnv.enabled }}
+          env:
+          {{ range .Values.deployment.serviceEnv.envLists }}
+          {{ if .valueFrom }}
+          - name: {{ .envName }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ .valueFrom.secretKeyRef.secretName }}
+                key: {{ .valueFrom.secretKeyRef.key }}
+          {{ end }}
+          {{ if .value }}
+          - name: {{ .envName }}
+            value: {{ quote .value }}
+          {{ end }}
+          {{ end }}
+          {{ end }}
+          volumeMounts:
+          {{ if .Values.persistentVolumeClaim.enabled }}
+          {{ range .Values.persistentVolumeClaim.claims }}
+            - name: {{ .volumeName }}
+              mountPath: {{ .mountPath }}
+          {{ end }}
+          {{ end }}
+          {{ if .Values.configMaps.enabled }}
+          {{ range .Values.configMaps.fileConfig.files }}
+            - name: {{ $.Values.configMaps.configName }}
+              mountPath: {{ .mountPath }}/{{ .name }}
+              subPath: {{ .name }}
+          {{ end }}
+          {{ end }}
+      volumes:
+      {{ if .Values.persistentVolumeClaim.enabled }}
+      {{ range .Values.persistentVolumeClaim.claims }}
+        - name: {{ .volumeName }}
+          persistentVolumeClaim:
+            claimName: {{ .claimName }}-pvc
+      {{ end }}
+      {{ end }}
+      {{ if .Values.configMaps.enabled }}
+        - name: {{ .Values.configMaps.configName }}
+          configMap:
+            name: {{ .Values.configMaps.configName }}
+      {{ end }}
+
+            

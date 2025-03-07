@@ -1,0 +1,22 @@
+{{ if .Values.persistentVolumes.enabled }}
+{{ range .Values.persistentVolumes.volumes }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .name }}-pv
+spec:
+  capacity:
+    storage: {{ .capacity }}
+  {{ if .storageClass.enabled }}
+  storageClassName: {{ .storageClass.name  }}
+  {{ end }}
+  volumeMode: {{ .mode }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{ .hostPath }}
+    type: {{ .type }}
+---
+{{ end }}
+{{ end }}

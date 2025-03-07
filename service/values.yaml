@@ -1,0 +1,136 @@
+replicaCount: 1
+# revisionHistoryLimit: 10
+
+rBAC:
+  enabled: false
+  name: default
+
+deployment:
+  name: default
+  serviceEnv:
+    enabled: false
+    envLists:
+      - envName:
+        valueFrom:
+          secretKeyRef:
+            secretName:
+            key:
+      - envName:
+        value:
+  initEnv:
+    enabled: false
+    envLists:
+      - envName:
+        valueFrom:
+          secretKeyRef:
+            secretName:
+            key:
+      - envName:
+        value:
+
+  initContainer:
+    enabled: false
+    name: default
+    image:
+      repository: busybox
+      pullPolicy: IfNotPresent
+      tag: latest
+    command:
+      - sh
+      - -c
+      - sleep 3600
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+portLists:
+  - port: 3000
+    name: http
+    targetPort: http
+
+serviceType: ClusterIP
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+
+persistentVolumes:
+  enabled: false
+  volumes:
+    - name:
+      capacity:
+      storageClass:
+        enabled:
+        name:
+      mode:
+      hostPath: ""
+      type:
+
+persistentVolumeClaim:
+  enabled: false
+  claims:
+    - claimName:
+      volumeName:
+      storageClass:
+        enabled:
+        name:
+      claimCapacity:
+      claimAccessMode: {}
+      mountPath: ""
+
+configMaps:
+  enabled: false
+  configName: defaultConfigMap
+  keyBase:
+    enabled: false
+    content: |
+      # String
+  fileConfig:
+    enabled: false
+    files:
+      - name: file1.json
+        content: |
+          {
+            "key": "file1"
+          }
+        mountPath: /tmp
+
+securityContext: {}
+
+readinessProbe:
+  enabled: false
+  httpGet:
+    enabled: false
+    path:
+    port:
+  command:
+    enabled: false
+    data:
+
+livenessProbe:
+  enabled: false
+  path:
+  port:
+  initDelay:
+  period:
+  timeout:
+
+database:
+  userName:
+  password:
+  host:
+  name:
+  connectionString:
+    enabled: false
+    type:
+secret:
+  enabled: false
+  secretLists:
+    - name:
+      data: |
+        # data
