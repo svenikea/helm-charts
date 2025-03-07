@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/helm/chart-testing
+    rev: v3.7.1 # Use the latest stable version
+    hooks:
+      - id: ct-lint
+      - id: ct-install
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0 # Use the latest stable version
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+
+  - repo: https://github.com/instrumenta/kubeval
+    rev: v0.16.1 # Validate Helm templates against Kubernetes schemas
+    hooks:
+      - id: kubeval
