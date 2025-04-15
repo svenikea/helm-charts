@@ -21,7 +21,7 @@ spec:
     spec:
       # revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
       {{ if .Values.rBAC.enabled }}
-      serviceAccountName: {{ .Values.rBAC.name }}
+       serviceAccountName: {{ .Values.rBAC.name }}
       {{ end }}
       securityContext:
       {{ toYaml .Values.securityContext | nindent 8 }}
