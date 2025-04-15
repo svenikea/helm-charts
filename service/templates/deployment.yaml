@@ -73,15 +73,13 @@ spec:
             timeoutSeconds: {{ .Values.livenessProbe.timeout }}
           {{ end }}
           resources:
-          {{ toYaml .Values.resources | nindent 12 }}
+            {{ toYaml .Values.resources | nindent 14 }}
           ports:
             {{ range .Values.portLists }}
             - containerPort: {{ .port }}
               protocol: {{ .protocol }}
               name: {{ .name }}
             {{ end }}
-          resources:
-            {{ toYaml .Values.resources | nindent 14 }}
           {{ if .Values.deployment.serviceEnv.enabled }}
           env:
           {{ range .Values.deployment.serviceEnv.envLists }}
