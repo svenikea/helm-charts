@@ -1,0 +1,96 @@
+{{ if .Values.deployment.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  labels:
+    app: {{ .Values.deployment.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.name }}
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    {{ if .Values.deployStrategy.rollingUpdate.enabled }}
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+    {{ else if .Values.deployStrategy.reCreate.enabled }}
+      type: Recreate
+    {{  end }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.name }}
+    spec:
+      revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+      securityContext:
+      {{ toYaml .Values.securityContext | nindent 8 }}
+      {{ if .Values.migration.enabled }}
+      initContainers:
+        - name: {{ .Values.migration.name }}
+          image: {{ .Values.migration.image }}
+          {{ if .Values.migration.command.enabled }}
+            command: {{ .Values.migration.command.data }}
+          {{ end }}
+          {{ if .Values.migration.env.enabled }}
+          env:
+            {{ range .Values.migration.env.envLists }}
+              {{ if .valueFrom }}
+                - name: {{ .envName }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .valueFrom.secretKeyRef.secretName }}
+                      key: {{ .valueFrom.secretKeyRef.key }}
+              {{ end }}
+              {{ if .value }}
+                - name: {{ .envName }}
+                  value: {{ .value }}
+              {{ end }}
+            {{ end }}
+          {{ end }}
+      {{ end }}
+      containers:
+        - name: {{ .Values.deployment.name }}
+          image: {{ .Values.image.repository }}:{{ $.Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+          {{ toYaml .Values.resources | nindent 12 }}
+          ports:
+            {{ range .Values.portLists }}
+            - containerPort: {{ .port }}
+              protocol: {{ .protocol }}
+              name: {{ .name }}
+            {{ end }}
+          resources:
+            {{ toYaml .Values.resources | nindent 14 }}
+          {{ if .Values.serviceEnv.env.enabled }}
+          env:
+            {{ range .Values.serviceEnv.envLists }}
+              {{ if .valueFrom }}
+                - name: {{ .envName }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .valueFrom.secretKeyRef.secretName }}
+                      key: {{ .valueFrom.secretKeyRef.key }}
+              {{ end }}
+              {{ if .value }}
+                - name: {{ .envName }}
+                  value: {{ .value }}
+              {{ end }}
+            {{ end }}
+          {{ end }}
+      {{ if .Values.persistentVolumeClaim.enabled }}
+          volumeMounts:
+            - name: {{ .Values.persistentVolume.metadata.name }}
+              mountPath: {{ .Values.persistentVolumeClaim.mountPath }}
+              {{ if .Values.persistentVolumeClaim.subPath }}
+              subPath: {{ .Values.persistentVolumeClaim.subPath }}
+              {{ end }}
+      volumes:
+        - name: {{ .Values.persistentVolume.metadata.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistentVolume.metadata.name }}-pvc
+      {{ end }}
+{{ end }}

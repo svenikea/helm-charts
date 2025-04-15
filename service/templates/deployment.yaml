@@ -43,7 +43,7 @@ spec:
         {{ if .value }}
         - name: {{ .envName }}
           value: {{ quote .value }}
-        {{ end }}       
+        {{ end }}
         {{ end }}
         {{ end }}
       {{ end }}
@@ -125,5 +125,3 @@ spec:
           configMap:
             name: {{ .Values.configMaps.configName }}
       {{ end }}
-
-            

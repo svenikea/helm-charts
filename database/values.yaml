@@ -1,0 +1,122 @@
+replicaCount: 1
+revisionHistoryLimit: 10
+
+clusterRole:
+  enabled: false
+  name: default
+  rules:
+    - apiGroups: [""]
+      resources: ["secrets"]
+      verbs: ["get", "list", "watch"]
+
+clusterRoleBinding:
+  enabled: false
+  name: default
+  serviceAccount:
+    targetAccount:
+    targetNamespace:
+
+roleBinding:
+  enabled: false
+  name: default
+  serviceAccount:
+    targetAccount:
+    targetNamespace:
+
+deployment:
+  enabled: true
+  name: default
+
+statefulSets:
+  enabled: false
+
+image:
+  repository: mysql
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+portLists:
+  - port: 3306
+    name: db-port
+    targetPort: db-port
+
+serviceType: ClusterIP
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+  cpu: 100m
+  memory: 100Mi
+
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  supplementalGroups:
+    - 0
+
+persistentVolume:
+  enabled: true
+  metadata:
+    name: test
+  capacity: 10Gi
+  mode: Filesystem
+  hostPath:
+
+persistentVolumeClaim:
+  enabled: true
+  claimCapacity: 10Gi
+  claimAccessMode:
+    - ReadWriteOnce
+  mountPath: /var/www/html
+  subPath:
+
+storageClass:
+  enabled:
+  name:
+  isNotDefault:
+  provisioner:
+  volumeExpansaion:
+  volumeBindingMode:
+
+deployStrategy:
+  rollingUpdate:
+    enabled: false
+  reCreate:
+    enabled: false
+
+serviceEnv:
+  env:
+    enabled:
+  envLists:
+    - envName:
+      valueFrom:
+        secretKeyRef:
+          secretName:
+          key:
+    - envName:
+      value:
+
+migration:
+  enabled: false
+  name:
+  image:
+  command:
+    enabled:
+    data:
+  env:
+    enable: false
+  envLists:
+    - envName:
+      valueFrom:
+        secretKeyRef:
+          secretName:
+          key:
+    - envName:
+      value:
+
+dabaseSecret:
+  secretName:
+  secretData:

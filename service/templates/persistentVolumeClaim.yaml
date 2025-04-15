@@ -10,7 +10,7 @@ spec:
       storage: {{ .claimCapacity }}
   volumeName: {{ .volumeName }}-pv
   {{ if .storageClass.enabled }}
-  storageClassName: {{ .storageClass.name }} 
+  storageClassName: {{ .storageClass.name }}
   {{ end }}
   accessModes: [{{- include "extraClaimsAccessMode" . | trimAll " " }}]
 ---

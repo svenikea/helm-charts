@@ -1,18 +1,13 @@
 repos:
-  - repo: https://github.com/helm/chart-testing
-    rev: v3.7.1
-    hooks:
-      - id: ct-lint
-      - id: ct-install
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
-      - id: check-yaml
+      - id: check-merge-conflict
 
-  - repo: https://github.com/yannh/kubeconform
-    rev: v0.6.7
+  - repo: https://github.com/jtyr/kubeconform-helm
+    rev: v0.1.17
     hooks:
-      - id: kubeconform
+      - id: kubeconform-helm
+        files: '^.*\/templates\/.*\.(yaml|yml)$'

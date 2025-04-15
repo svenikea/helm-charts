@@ -1,0 +1,15 @@
+{{ if .Values.storageClass.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.name }}
+  annotations:
+    {{ if .Values.storageClass.isNotDefault }}
+      storageclass.kubernetes.io/is-default-class: "false"
+    {{ end }}
+provisioner: {{ .Values.storageClass.provisioner }}
+{{ if .Values.storageClass.volumeExpansaion }}
+allowVolumeExpansion: true
+{{ end }}
+volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
+{{ end }}
