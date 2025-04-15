@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.ingress.metadata.name }}
+  {{- if .Values.ingress.annotations }}
+  annotations:
+    {{ .Values.ingress.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.spec.ingressClassName }}
+  rules:
+    - host: {{ .Values.ingress.hostName }}
+      http:
+        paths:
+          {{ range .Values.portLists }}
+          - path: {{ .path }}
+            backend:
+              service:
+                name: {{ $.Values.deployment.name }}-svc
+                port:
+                  name: {{ quote .targetPort }}
+            pathType: {{ .pathType }}
+          {{ end }}
+  {{ if .Values.certManager.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hostName }}
+      secretName: {{ .Values.deployment.name }}-ingress-secret
+  {{ end }}

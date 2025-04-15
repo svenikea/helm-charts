@@ -1,0 +1,15 @@
+ingress:
+  hostName: localhost
+  metadata:
+    name: default
+  spec:
+    ingressClassName: proxy
+  annotations:
+
+certManager:
+  enabled: true
+  metadata:
+    name: default
+    namespace: cert-manager
+  email: admin@example.com
+  privateKeySecretRef: default
