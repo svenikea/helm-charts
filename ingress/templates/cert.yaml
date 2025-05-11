@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.certManager.metadata.namespace }}
 ---
 apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
+kind: Issuer
 metadata:
   name: {{ .Values.certManager.metadata.name }}
   namespace: {{ .Values.certManager.metadata.namespace }}
