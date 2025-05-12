@@ -1,9 +1,4 @@
 {{ if .Values.certManager.enabled }}
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .Values.certManager.metadata.namespace }}
----
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
