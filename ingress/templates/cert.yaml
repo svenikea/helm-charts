@@ -2,8 +2,8 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ .Values.certManager.metadata.name }}
-  namespace: {{ .Values.certManager.metadata.namespace }}
+  name: {{ .Values.deployment.name }}-issuer
+  namespace: {{ .Values.certManager.namespace }}
 spec:
   acme:
     email: {{ .Values.certManager.email }}
@@ -13,5 +13,5 @@ spec:
     solvers:
       - http01:
           ingress:
-            class: {{ .Values.ingress.spec.ingressClassName }}
+            class: {{ .Values.ingress.ingressClassName }}
 {{ end }}

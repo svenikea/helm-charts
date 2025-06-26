@@ -1,15 +1,14 @@
+deployment:
+  name: ""
+
 ingress:
-  hostName: localhost
-  metadata:
-    name: default
-  spec:
-    ingressClassName: proxy
-  annotations:
+  hostName: ""
+  ingressClassName: ""
+  annotations: {}
+  rules:
 
 certManager:
-  enabled: true
-  metadata:
-    name: default
-    namespace: cert-manager
+  enabled: false
+  namespace: cert-manager
   email: admin@example.com
   privateKeySecretRef: default
