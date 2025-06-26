@@ -7,14 +7,27 @@ metadata:
 data: {{ toYaml .Values.configMaps.keyBase.content | nindent 2 }}
 ---
 {{ end }}
-{{ if .Values.configMaps.fileConfig.enabled }}
-{{ range .Values.configMaps.fileConfig.files }}
+
+{{ if .Values.configMaps.extraConfigFile.enabled }}
+{{ range .Values.configMaps.extraConfigFile.files }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
  name: {{ .name }}
-data: {{ .data | nindent 2}}
+data:
+  {{ .subPath }}: |
+    {{ .data | nindent 4 }}
 ---
 {{ end }}
 {{ end }}
+{{ end }}
+---
+{{ if .Values.promtail.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+data:
+  promtail-config.yaml: |
+    {{ .Values.promtail.config | nindent 4 }}
 {{ end }}

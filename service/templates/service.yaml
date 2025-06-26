@@ -4,14 +4,14 @@ metadata:
   name: {{ .Values.deployment.name }}-svc
   labels:
     app: {{ .Values.deployment.name }}-svc
+    {{ if .Values.monitoring.enabled }}
+    monitoring: "true"
+    {{ end }}
 spec:
-  type: {{ .Values.serviceTypee }}
   ports:
-  {{- range .Values.portLists }}
-  - port: {{ .port }}
-    targetPort: {{ .targetPort }}
-    protocol: {{ .protocol }}
-    name: {{ .name }}
-  {{- end }}
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
   selector:
-    app: {{ .Values.deployment.name }}
+      app: {{ .Values.deployment.name }}
