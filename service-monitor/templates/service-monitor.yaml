@@ -1,0 +1,24 @@
+{{ range $index, $service := $.Values.serviceMonitors }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $service.name }}-monitor
+  labels:
+    app: {{ $service.name }}
+    monitor: {{ $service.name }}
+    prometheus: monitoring
+spec:
+  jobLabel: {{ $service.name }}
+  selector:
+    matchLabels:
+    {{ if $service.selectors }}
+    {{ range $key, $value := $service.selectors }}
+      {{ $key }}: {{ $value | quote }}
+    {{ end }}
+    {{ end }}
+  endpoints:
+  - port: {{ $service.port | quote }}
+    interval: {{ $service.interval }}
+    path: {{ $service.path }}
+{{ end }}

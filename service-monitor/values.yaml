@@ -1,0 +1,7 @@
+serviceMonitors:
+  - name:
+    port: 80
+    interval: 10s
+    path: /metrics
+    selectors:
+      monitoring: "true"
