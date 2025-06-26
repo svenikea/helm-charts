@@ -1,63 +1,137 @@
-replicaCount: 1
-# revisionHistoryLimit: 10
+# Deployment values
+deployment:
+  name:
+  scale: 1
+  image:
+    name: service
+    tag: latest
+    repositoryUrl:
+    pullPolicy:
+  strategy:
 
 rBAC:
   enabled: false
   name: default
 
-deployment:
-  name: default
-  serviceEnv:
+spreadConstraints:
+  enabled: false
+  maxSkew: 1
+  nodeLabel: kubernetes.io/hostname
+  whenUnsatisfiable: DoNotSchedule
+
+privateRegistry:
+  enabled: false
+  registry:
+  username:
+  password:
+
+initEnv:
+  enabled: false
+  envLists:
+    - envName:
+      valueFrom:
+        secretKeyRef:
+          secretName:
+          key:
+    - envName:
+      value:
+
+redisCredential:
+  enabled: false
+
+serviceEnv:
+  enabled: false
+  envLists:
+    - envName:
+      valueFrom:
+        secretKeyRef:
+          secretName:
+          key:
+    - envName:
+      value:
+
+secret:
+  enabled: false
+  secretLists:
+    - name:
+      data:
+        # Key: Value
+
+configMaps:
+  enabled: false
+  name: service-config-map
+  keyBase:
     enabled: false
-    envLists:
-      - envName:
-        valueFrom:
-          secretKeyRef:
-            secretName:
-            key:
-      - envName:
-        value:
-  initEnv:
+    mountPath: /path-to-file
+    volumeName: volume_name
+    subPath: subpath_name
+    configName: defaultConfigMap
+    content: |
+      # String
+
+  extraConfigFile:
     enabled: false
-    envLists:
-      - envName:
-        valueFrom:
-          secretKeyRef:
-            secretName:
-            key:
-      - envName:
-        value:
-
-  initContainer:
-    enabled: false
-    name: default
-    image:
-      repository: busybox
-      pullPolicy: IfNotPresent
-      tag: latest
-    command:
-      - sh
-      - -c
-      - sleep 3600
-
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
-
-portLists:
-  - port: 3000
-    name: http
-    targetPort: http
-
-serviceType: ClusterIP
+    files:
+      - name: configuration1.yml
+        data: |
+          {
+            "key": "file1"
+          }
+        mountPath: /path-to-file
+        volumeName: volume name
+        subPath: subpath name
 
 resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
+  enabled: false
+  memoryLimit: 512Mi
+  memoryRequest: 256Mi
+
+database:
+  migration: false
+  environment: DEV
+  host:
+  port:
+  username:
+  schema:
+  password:
+  name:
+  connectionStringName: Database__ConnectionString
+  databaseType:
+  credentials:
+    enabled: false
+container:
+  port: 8080
+
+initDebug:
+  enabled: false
+initExtraVolumeMounts:
+extraVolumeMounts:
+
+extraVolumes:
+initExtraVolumes:
+
+extraContainer:
+  enabled: false
+  containers:
+    - name:
+      image:
+
+persistence:
+  enabled: false
+  name:
+  storageClass:
+  size:
+
+livenessProbe:
+  path:
+  enabled: false
+
+readinessProbe:
+  path:
+  enabled: false
+
+monitoring:
+  enabled: false
 
 persistentVolumes:
   enabled: false
@@ -70,67 +144,3 @@ persistentVolumes:
       mode:
       hostPath: ""
       type:
-
-persistentVolumeClaim:
-  enabled: false
-  claims:
-    - claimName:
-      volumeName:
-      storageClass:
-        enabled:
-        name:
-      claimCapacity:
-      claimAccessMode: {}
-      mountPath: ""
-
-configMaps:
-  enabled: false
-  configName: defaultConfigMap
-  keyBase:
-    enabled: false
-    content: |
-      # String
-  fileConfig:
-    enabled: false
-    files:
-      - name: file1.json
-        content: |
-          {
-            "key": "file1"
-          }
-        mountPath: /tmp
-
-securityContext: {}
-
-readinessProbe:
-  enabled: false
-  httpGet:
-    enabled: false
-    path:
-    port:
-  command:
-    enabled: false
-    data:
-
-livenessProbe:
-  enabled: false
-  path:
-  port:
-  initDelay:
-  period:
-  timeout:
-
-database:
-  userName:
-  password:
-  host:
-  name:
-  connectionString:
-    enabled: false
-    type:
-secret:
-  enabled: false
-  secretLists:
-    - name:
-      data: |
-        # data

@@ -1,18 +1,14 @@
-{{ if .Values.persistentVolumeClaim.enabled }}
-{{ range .Values.persistentVolumeClaim.claims }}
-apiVersion: v1
+{{ if .Values.persistence.enabled }}
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  name: {{ .claimName }}-pvc
+  name: {{ .Values.deployment.name }}-{{.Values.persistence.name }}-pvc
 spec:
+  accessModes:
+    - ReadWriteMany
   resources:
     requests:
-      storage: {{ .claimCapacity }}
-  volumeName: {{ .volumeName }}-pv
-  {{ if .storageClass.enabled }}
-  storageClassName: {{ .storageClass.name }}
-  {{ end }}
-  accessModes: [{{- include "extraClaimsAccessMode" . | trimAll " " }}]
----
-{{ end }}
+      storage: {{ .Values.persistence.size }}
+  volumeName: {{ .Values.deployment.name }}-{{ .Values.persistence.name }}-pvc
+  storageClassName: {{ .Values.persistence.storageClass }}
 {{ end }}

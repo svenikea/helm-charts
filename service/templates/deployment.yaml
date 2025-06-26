@@ -2,92 +2,54 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.deployment.name }}
-  labels:
-    app: {{ .Values.deployment.name }}
 spec:
+  replicas: {{ .Values.deployment.scale }}
   selector:
     matchLabels:
       app: {{ .Values.deployment.name }}
-  replicas: {{ .Values.replicaCount }}
+  {{ if .Values.deployment.strategy }}
   strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
+    {{ toYaml .Values.deployment.strategy | nindent 4 }}
+  {{ end }}
   template:
     metadata:
       labels:
         app: {{ .Values.deployment.name }}
     spec:
-      # revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
       {{ if .Values.rBAC.enabled }}
        serviceAccountName: {{ .Values.rBAC.name }}
       {{ end }}
-      securityContext:
-      {{ toYaml .Values.securityContext | nindent 8 }}
-      {{ if .Values.deployment.initContainer.enabled }}
-      initContainers:
-        name: {{ .Values.deployment.initContainer.name }}
-        image: {{ .Values.deployment.initContainer.image }}
-        command: {{ .Values.deployment.initContainer.command }}
-        {{ if .Values.deployment.initEnv.enabled }}
-        env:
-        {{ range .Values.deployment.initEnv.envLists }}
-        {{ if .valueFrom }}
-        - name: {{ .envName }}
-          valueFrom:
-            secretKeyRef:
-              name: {{ .valueFrom.secretKeyRef.secretName }}
-              key: {{ .valueFrom.secretKeyRef.key }}
-        {{ end }}
-        {{ if .value }}
-        - name: {{ .envName }}
-          value: {{ quote .value }}
-        {{ end }}
-        {{ end }}
-        {{ end }}
+      {{ if .Values.privateRegistry.enabled }}
+      imagePullSecrets:
+        - name: {{ .Values.deployment.name }}-docker-registry
       {{ end }}
-      containers:
-        - name: {{ .Values.deployment.name }}
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{ if .Values.readinessProbe.enabled }}
-          readinessProbe:
-            {{ if .Values.readinessProbe.httpGet.enabled }}
-            httpGet:
-              path: {{ .Values.readinessProbe.httpGet.path }}
-              port: {{ .Values.readinessProbe.httpGet.port }}
-            {{ end }}
-            {{ if .Values.readinessProbe.command.enabled }}
-              exec:
-                command: {{ .Values.readinessProbe.command.data }}
-            {{ end }}
+      {{ if .Values.spreadConstraints.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.spreadConstraints.maxSkew }}
+          topologyKey: {{ .Values.spreadConstraints.nodeLabel }}
+          whenUnsatisfiable: {{ .Values.spreadConstraints.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              app: {{ .Values.deployment.name }}
+      {{ end }}
+      nodeSelector:
+        "kubernetes.io/os": linux
+      {{ if .Values.database.migration }}
+      initContainers:
+        - name: migration
+          image: {{ .Values.deployment.image.repositoryUrl }}/{{.Values.deployment.image.name}}:migration-{{.Values.deployment.image.tag}}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy | default "IfNotPresent" }}
+          {{ if .Values.initDebug.enabled }}
+          command: ["sh", "-c", "ls -al && sleep 3600"]
           {{ end }}
-          {{ if .Values.livenessProbe.enabed }}
-          livenessProbe:
-            httpGet:
-              path: {{ .Values.livenessProbe.path }}
-              port: {{ .Values.livenessProbe.port }}
-            initialDelaySeconds: {{ .Values.livenessProbe.initDelay }}
-            periodSeconds: {{ .Values.livenessProbe.period }}
-            timeoutSeconds: {{ .Values.livenessProbe.timeout }}
-          {{ end }}
-          resources:
-            {{ toYaml .Values.resources | nindent 14 }}
-          ports:
-            {{ range .Values.portLists }}
-            - containerPort: {{ .port }}
-              protocol: {{ .protocol }}
-              name: {{ .name }}
-            {{ end }}
-          {{ if .Values.deployment.serviceEnv.enabled }}
           env:
-          {{ range .Values.deployment.serviceEnv.envLists }}
+          {{ if .Values.initEnv.enabled }}
+          {{ range .Values.initEnv.envLists }}
           {{ if .valueFrom }}
           - name: {{ .envName }}
             valueFrom:
               secretKeyRef:
-                name: {{ .valueFrom.secretKeyRef.secretName }}
+                name: {{ $.Values.deployment.name }}-{{ .valueFrom.secretKeyRef.secretName }}
                 key: {{ .valueFrom.secretKeyRef.key }}
           {{ end }}
           {{ if .value }}
@@ -97,29 +59,171 @@ spec:
           {{ end }}
           {{ end }}
           volumeMounts:
-          {{ if .Values.persistentVolumeClaim.enabled }}
-          {{ range .Values.persistentVolumeClaim.claims }}
+          {{ if .Values.initExtraVolumeMounts }}
+          {{ toYaml $.Values.initExtraVolumeMounts | nindent 12}}
+          {{ end }}
+      {{ end }}
+      containers:
+      {{ if .Values.promtail.enabled }}
+        - name: promtail-sidecar
+          image: {{ .Values.promtail.image | default "grafana/promtail:3.2.1" }}
+          args:
+            - "--config.file=/mnt/config/promtail-config.yaml"
+          volumeMounts:
+            - name: promtail-config
+              mountpath: /mnt/config
+      {{ end }}
+        - name: {{ .Values.deployment.name }}-app
+          image: {{ .Values.deployment.image.repositoryUrl }}/{{.Values.deployment.image.name}}:{{.Values.deployment.image.tag}}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy | default "IfNotPresent" }}
+          {{ if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path | default "/health" }}
+              port: {{ .Values.container.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+            # This will continuously check the health check 3 times, each time for 10s in total 30s before the pod restart
+          {{ end }}
+          {{ if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path | default "/health" }}
+              port: {{ .Values.container.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 1
+            failureThreshold: 3
+            # This will continuously check the health check 3 times, each time for 30s in total 1 minute before the pod deem not ready
+          {{ end }}
+          {{ if .Values.resources.enabled }}
+          resources:
+            limits:
+              memory: {{.Values.resources.memoryLimit}}
+            requests:
+              memory: {{.Values.resources.memoryRequest}}
+          {{ end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.container.port }}
+              protocol: TCP
+          env:
+          - name: PodName
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          {{ if .Values.redisCredential.enabled }}
+          - name: REDIS_HOST
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.deployment.name }}-redis-secrets
+                key: REDIS_HOST
+          - name: REDIS_PORT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.deployment.name }}-redis-secrets
+                key: REDIS_PORT
+          - name: REDIS_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.deployment.name }}-redis-secrets
+                key: REDIS_USERNAME
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.deployment.name }}-redis-secrets
+                key: REDIS_PASSWORD
+          {{ end }}
+          # {{ if .Values.database.credentials.enabled }}
+          # - name: DATABASE_HOST
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: {{ .Values.deployment.name }}-db-credentials
+          #       key: DATABASE_HOST
+          # - name: DATABASE_PORT
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: {{ .Values.deployment.name }}-db-credentials
+          #       key: DATABASE_PORT
+          # - name: DATABASE_NAME
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: {{ .Values.deployment.name }}-db-credentials
+          #       key: DATABASE_NAME
+          # - name: DATABASE_USERNAME
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: {{ .Values.deployment.name }}-db-credentials
+          #       key: DATABASE_USERNAME
+          # - name: DATABASE_PASSWORD
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: {{ .Values.deployment.name }}-db-credentials
+          #       key: DATABASE_PASSWORD
+          # {{ end }}
+          {{ if .Values.serviceEnv.enabled }}
+          {{ range .Values.serviceEnv.envLists }}
+          {{ if .valueFrom }}
+          - name: {{ .envName }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Values.deployment.name }}-{{ .valueFrom.secretKeyRef.secretName }}
+                key: {{ .valueFrom.secretKeyRef.key }}
+          {{ end }}
+          {{ if .value }}
+          - name: {{ .envName }}
+            value: {{ quote .value }}
+          {{ end }}
+          {{ end }}
+          {{ end }}
+          volumeMounts:
+          {{ if .Values.configMaps.enabled }}
+          {{ if .Values.configMaps.keyBase.enabled }}
+            - name: {{ .Values.configMaps.keyBase.volumeName }}
+              mountPath: {{ .Values.configMaps.keyBase.mountPath }}
+              subPath: {{ .Values.configMaps.keyBase.subPath }}
+          {{ end }}
+          {{ range .Values.configMaps.extraConfigFile.files }}
             - name: {{ .volumeName }}
               mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
           {{ end }}
           {{ end }}
-          {{ if .Values.configMaps.enabled }}
-          {{ range .Values.configMaps.fileConfig.files }}
-            - name: {{ $.Values.configMaps.configName }}
-              mountPath: {{ .mountPath }}/{{ .name }}
-              subPath: {{ .name }}
+          {{ if .Values.extraVolumeMounts }}
+          {{ toYaml .Values.extravolumeMounts | nindent 12}}
           {{ end }}
-          {{ end }}
+        {{ if .Values.extraContainer.enabled }}
+        {{ range .Values.extraContainer.containers }}
+        - name: {{ .name }}
+          image: {{ .image }}
+        {{ end }}
+        {{ end }}
       volumes:
-      {{ if .Values.persistentVolumeClaim.enabled }}
-      {{ range .Values.persistentVolumeClaim.claims }}
-        - name: {{ .volumeName }}
-          persistentVolumeClaim:
-            claimName: {{ .claimName }}-pvc
-      {{ end }}
-      {{ end }}
-      {{ if .Values.configMaps.enabled }}
-        - name: {{ .Values.configMaps.configName }}
+      {{ if .Values.promtail.enabled }}
+        - name: promtail-config
           configMap:
-            name: {{ .Values.configMaps.configName }}
+            name: promtail-config
+      {{ end}}
+      {{ if .Values.configMaps.enabled }}
+      {{ if .Values.configMaps.keyBase.enabled }}
+        - name: {{ .volumeName }}
+          configMap:
+            name: {{ .Values.configMaps.keyBase.configName }}
+      {{ end }}
+      {{ range .Values.configMaps.extraConfigFile.files }}
+        - name: {{ .volumeName }}
+          configMap:
+            name: {{ .name }}
+      {{ end }}
+      {{ end }}
+      {{ if .Values.extraVolumes }}
+      {{ toYaml .Values.extraVolumes | nindent 8}}
+      {{ end }}
+      {{- /*
+      #### Remember to delete this stupid section when you are done with the dev BS
+      */}}
+      {{ if .Values.initExtraVolumes }}
+      {{ toYaml .Values.initExtraVolumes | nindent 8}}
       {{ end }}
