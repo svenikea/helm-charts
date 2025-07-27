@@ -3,6 +3,7 @@ deployment:
 
 ingress:
   hostName: ""
+  hostNames: "" # <-- This is a list of hostnames for the ingress
   ingressClassName: ""
   annotations: {}
   rules:
@@ -12,3 +13,10 @@ certManager:
   namespace: cert-manager
   email: admin@example.com
   privateKeySecretRef: default
+  http01:
+    enabled: true
+  dns01:
+    cloudflare:
+      enabled: false
+      apiTokenSecretName: ""
+      apiTokenSecretKey: ""

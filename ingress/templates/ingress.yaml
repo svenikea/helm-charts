@@ -14,7 +14,13 @@ spec:
   rules: {{ .Values.ingress.rules | toYaml | nindent 4 }}
   {{ if .Values.certManager.enabled }}
   tls:
+  {{ if .Values.ingress.hostName }}
     - hosts:
         - {{ .Values.ingress.hostName }}
+  {{ end }}
+  {{ if .Values.ingress.hostNames }}
+    - hosts:
+        {{ .Values.ingress.hostNames | toYaml | nindent 8 }}
+  {{ end }}
       secretName: {{ .Values.deployment.name }}-ingress-secret
   {{ end }}
