@@ -6,6 +6,7 @@ ingress:
   hostNames: "" # <-- This is a list of hostnames for the ingress
   ingressClassName: ""
   annotations: {}
+  s3Behavior: false
   rules:
 
 certManager:
