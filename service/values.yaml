@@ -9,6 +9,15 @@ deployment:
     pullPolicy:
   strategy:
 
+serviceType:
+loadBalancerIP: ""
+
+servicePorts:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+
 rBAC:
   enabled: false
   name: default
@@ -19,6 +28,7 @@ spreadConstraints:
   nodeLabel: kubernetes.io/hostname
   whenUnsatisfiable: DoNotSchedule
 
+# Create secret for private registry
 privateRegistry:
   enabled: false
   registry:
@@ -113,8 +123,6 @@ initExtraVolumes:
 extraContainer:
   enabled: false
   containers:
-    - name:
-      image:
 
 persistence:
   enabled: false

@@ -8,10 +8,13 @@ metadata:
     monitoring: "true"
     {{ end }}
 spec:
+  type: {{ .Values.serviceType | default "ClusterIP" }}
+  {{ if eq .Values.serviceType "LoadBalancer" }}
+  {{ if .values.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.loadBalancerIP }}
+  {{ end }}
+  {{ end }}
   ports:
-  - port: 80
-    targetPort: http
-    protocol: TCP
-    name: http
+  {{ toYaml .Values.servicePorts | nindent 2 }}
   selector:
       app: {{ .Values.deployment.name }}
