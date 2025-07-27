@@ -1,0 +1,9 @@
+deployment:
+  name:
+
+matchLabels:
+
+networkPolicies:
+  - name:
+    ingress:
+    egress:

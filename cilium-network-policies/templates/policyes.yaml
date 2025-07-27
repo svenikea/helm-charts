@@ -1,0 +1,19 @@
+{{ range .Values.networkPolicies }}
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .name }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- $.Values.matchLabels | toYaml | nindent 5 }}
+  {{ if .ingress }}
+  ingress:
+    {{- .ingress | toYaml | nindent 3 }}
+  {{ end }}
+  {{ if .egress }}
+  egress:
+    {{- .egress | toYaml | nindent 3 }}
+  {{ end }}
+---
+{{ end }}
