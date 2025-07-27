@@ -11,7 +11,16 @@ spec:
     privateKeySecretRef:
       name: {{ .Values.certManager.privateKeySecretRef }}
     solvers:
+    {{ if .Values.certManager.http01.enabled }}
       - http01:
           ingress:
             class: {{ .Values.ingress.ingressClassName }}
+    {{ end }}
+    {{ if .Values.certManager.dns01.cloudflare.enabled }}
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: {{ .Values.certManager.dns01.cloudflare.apiTokenSecretName }}
+              key: {{ .Values.certManager.dns01.cloudflare.apiTokenSecretKey }}
+    {{ end }}
 {{ end }}
