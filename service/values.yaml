@@ -18,7 +18,6 @@ promtail:
   config: |
     # Promtail configuration here
 
-
 servicePorts:
   - port: 80
     targetPort: http
