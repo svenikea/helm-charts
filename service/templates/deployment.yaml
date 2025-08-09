@@ -163,6 +163,21 @@ spec:
           #       name: {{ .Values.deployment.name }}-db-credentials
           #       key: DATABASE_PASSWORD
           # {{ end }}
+          {{ if and .Values.secret.autoGenEnv .Values.secret.enabled  }}
+          {{ range .Values.secret.secretLists }}
+          {{- /*
+          ###### Save the outer context
+          */}}
+          {{ $secret := . }}
+          {{ range $key, $value := $secret.data }}
+          - name: {{ $key }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Values.deployment.name }}-{{ $secret.name }}
+                key: {{ $key }}
+          {{ end }}
+          {{ end }}
+          {{ end }}
           {{ if .Values.serviceEnv.enabled }}
           {{ range .Values.serviceEnv.envLists }}
           {{ if .valueFrom }}

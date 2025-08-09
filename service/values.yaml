@@ -57,6 +57,7 @@ redisCredential:
 
 serviceEnv:
   enabled: false
+  autoGenEnv: false
   envLists:
     - envName:
       valueFrom:
