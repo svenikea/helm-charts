@@ -12,6 +12,13 @@ deployment:
 serviceType:
 loadBalancerIP: ""
 
+promtail:
+  enabled: false
+  image:
+  config: |
+    # Promtail configuration here
+
+
 servicePorts:
   - port: 80
     targetPort: http
