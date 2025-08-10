@@ -29,3 +29,18 @@ privateRegistry:
   registry:
   username:
   password:
+
+externalSecret:
+  enabled: false
+  onepassword:
+    connectServer: false
+    connectHost: ""
+    sdk: false
+    tokenKey: ""
+    vaultName: ""
+    tokenName: ""
+    item: ""
+    data:
+    secretLists:
+      # - name:
+      #   onePassReference:
