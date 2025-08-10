@@ -1,0 +1,31 @@
+deployment:
+  name:
+
+secret:
+  enabled: false
+  secretLists:
+    - name:
+      data:
+        # Key: Value
+
+database:
+  enabled: false
+  connectionString:
+    enabled: false
+  migrationString:
+    enabled: false
+  credentials:
+    enabled: false
+  databaseType:
+  host:
+  port:
+  name:
+  username:
+  password:
+  schema:
+
+privateRegistry:
+  enabled: false
+  registry:
+  username:
+  password:
