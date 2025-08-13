@@ -32,6 +32,9 @@ privateRegistry:
 
 externalSecret:
   enabled: false
+  privateRegistry:
+    enabled: false
+    onepasswordItem: ""
   onepassword:
     connectServer: false
     connectHost: ""
