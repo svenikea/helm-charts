@@ -32,6 +32,7 @@ privateRegistry:
 
 externalSecret:
   enabled: false
+  refreshInterval:
   privateRegistry:
     enabled: false
     onepasswordItem: ""
