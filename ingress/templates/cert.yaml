@@ -2,7 +2,7 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ .Values.deployment.name }}-issuer
+  name: {{ printf "%s-issuer" .Values.deployment.name }}
   namespace: {{ .Values.certManager.namespace }}
 spec:
   acme:

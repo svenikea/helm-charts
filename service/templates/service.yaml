@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.deployment.name }}-svc
+  name: {{ printf "%s-svc" .Values.deployment.name }}
   labels:
-    app: {{ .Values.deployment.name }}-svc
+    app: {{ printf "%s-svc" .Values.deployment.name }}-svc
     {{ if .Values.monitoring.enabled }}
     monitoring: "true"
     {{ end }}

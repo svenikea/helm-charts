@@ -2,13 +2,13 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ .Values.deployment.name }}-{{.Values.persistence.name }}-pvc
+  name: {{ printf "%s-%s-pvc" .Values.deployment.name .Values.persistence.name }}
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: {{ .Values.persistence.size }}
-  volumeName: {{ .Values.deployment.name }}-{{ .Values.persistence.name }}-pvc
+  volumeName: {{ printf "%s-%s-pvc" .Values.deployment.name .Values.persistence.name }}
   storageClassName: {{ .Values.persistence.storageClass }}
 {{ end }}
