@@ -39,6 +39,28 @@ externalSecret:
   allKeyOneSecret:
     enabled: false
     field: ""
+  aws:
+    region: ""
+    secretName: ""
+    accessKeyName:
+    secretAccessKeyName:
+    keyPath: ""
+    parameterStore:
+      enabled: false
+    sercretManager:
+      enabled: false
+    dataFrom:
+      enabled: false
+      keyPath:
+    allKeyOneSecret:
+      enabled: false
+      keyPath: ""
+      version:
+    secretList:
+      # - name:
+      # keyPath: ""
+      # version:
+
   onepassword:
     connectServer: false
     connectHost: ""
