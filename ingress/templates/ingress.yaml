@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.deployment.name }}-ingress
+  name: {{ printf "%s-ingress" .Values.deployment.name }}
   annotations:
     {{ if .Values.certManager.enabled }}
-    cert-manager.io/issuer: {{ .Values.deployment.name }}-issuer
+    cert-manager.io/issuer: {{ printf "%s-issuer" .Values.deployment.name }}
     {{ end }}
     {{ if .Values.ingress.annotations }}
     {{ .Values.ingress.annotations | toYaml | nindent 4 }}
@@ -38,5 +38,5 @@ spec:
     - hosts:
         {{ .Values.ingress.hostNames | toYaml | nindent 8 }}
   {{ end }}
-      secretName: {{ .Values.deployment.name }}-ingress-secret
+      secretName: {{ printf "%s-ingress-secret" .Values.deployment.name }}
   {{ end }}

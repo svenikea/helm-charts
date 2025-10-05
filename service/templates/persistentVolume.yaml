@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .name }}-pv
+  name: {{ printf "%s-pv" .name }}
 spec:
   capacity:
     storage: {{ .capacity }}
