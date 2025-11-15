@@ -3,18 +3,18 @@ kind: Service
 metadata:
   name: {{ printf "%s-svc" .Values.deployment.name }}
   labels:
-    app: {{ printf "%s-svc" .Values.deployment.name }}-svc
-    {{ if .Values.monitoring.enabled }}
+    app: {{ printf "%s-svc" .Values.deployment.name }}
+    {{- if .Values.monitoring.enabled }}
     monitoring: "true"
-    {{ end }}
+    {{- end }}
 spec:
-  type: {{ .Values.serviceType | default "ClusterIP" }}
-  {{ if eq .Values.serviceType "LoadBalancer" }}
-  {{ if .values.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.loadBalancerIP }}
-  {{ end }}
-  {{ end }}
-  ports:
-  {{ toYaml .Values.servicePorts | nindent 2 }}
   selector:
-      app: {{ .Values.deployment.name }}
+    app: {{ .Values.deployment.name }}
+  type: {{ .Values.serviceConfig.serviceType | default "ClusterIP" }}
+  {{- if eq .Values.serviceConfig.serviceType "LoadBalancer" }}
+  {{- if .Values.serviceConfig.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.serviceConfig.loadBalancerIP }}
+  {{- end }}
+  {{- end }}
+  ports:
+  {{- toYaml .Values.serviceConfig.servicePorts | nindent 2 }}
