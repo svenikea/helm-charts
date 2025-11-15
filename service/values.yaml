@@ -9,6 +9,10 @@ deployment:
     pullPolicy:
   strategy:
 
+privateRegistry:
+  enabled: false
+  secretName: ""
+
 container:
   port: 8080
 
@@ -66,13 +70,6 @@ spreadConstraints:
   nodeLabel: kubernetes.io/hostname
   whenUnsatisfiable: DoNotSchedule
 
-# Create secret for private registry
-privateRegistry:
-  enabled: false
-  registry:
-  username:
-  password:
-
 initEnv:
   enabled: false
   envLists:
@@ -89,7 +86,6 @@ redisCredential:
 
 serviceEnv:
   enabled: false
-  autoGenEnv: false
   envLists:
     - envName:
       valueFrom:
@@ -101,9 +97,11 @@ serviceEnv:
 
 secret:
   enabled: false
+  autoGenEnv: false
   secretLists:
     - name:
       data:
+      envFrom:
         # Key: Value
 
 configMaps:
