@@ -31,6 +31,24 @@ serviceConfig:
       protocol: TCP
       name: http
 
+hpa:
+  enabled: false
+  annotations:
+  minReplicas:
+  maxReplicas:
+  metrics:
+    cpu:
+      enabled: false
+      targetCPUUtilizationPercentage:
+    memory:
+      enabled: false
+      targetMemoryUtilizationPercentage:
+    behavior:
+
+resources:
+  enabled: false
+  memoryLimit: 512Mi
+  memoryRequest: 256Mi
 
 promtail:
   enabled: false
@@ -111,11 +129,6 @@ configMaps:
         mountPath: /path-to-file
         volumeName: volume name
         subPath: subpath name
-
-resources:
-  enabled: false
-  memoryLimit: 512Mi
-  memoryRequest: 256Mi
 
 database:
   migration: false
