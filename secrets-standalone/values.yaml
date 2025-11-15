@@ -25,10 +25,11 @@ database:
   schema:
 
 privateRegistry:
-  enabled: false
-  registry:
-  username:
-  password:
+  plainText:
+    enabled: false
+    registry:
+    username:
+    password:
 
 externalSecret:
   enabled: false
@@ -36,9 +37,6 @@ externalSecret:
   privateRegistry:
     enabled: false
     onepasswordItem: ""
-  allKeyOneSecret:
-    enabled: false
-    field: ""
   aws:
     region: ""
     secretName: ""
@@ -60,7 +58,6 @@ externalSecret:
       # - name:
       # keyPath: ""
       # version:
-
   onepassword:
     connectServer: false
     connectHost: ""
@@ -70,6 +67,19 @@ externalSecret:
     tokenName: ""
     item: ""
     data:
+    multiSecrets:
+      enabled: false
+      items:
+        - name:
+          field:
     secretLists:
       # - name:
       #   onePassReference:
+    allKeyOneSecret:
+      enabled: false
+      field: ""
+    allKeyMultiSecrets:
+      enabled: false
+      fields:
+        # - Field1
+        # - Field2

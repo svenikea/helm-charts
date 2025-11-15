@@ -7,23 +7,23 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.deployment.name }}
-  {{ if .Values.deployment.strategy }}
+  {{- if .Values.deployment.strategy }}
   strategy:
     {{ toYaml .Values.deployment.strategy | nindent 4 }}
-  {{ end }}
+  {{- end }}
   template:
     metadata:
       labels:
         app: {{ .Values.deployment.name }}
     spec:
-      {{ if .Values.rBAC.enabled }}
+      {{- if .Values.rBAC.enabled }}
        serviceAccountName: {{ .Values.rBAC.name }}
-      {{ end }}
-      {{ if .Values.privateRegistry.enabled }}
+      {{- end }}
+      {{- if .Values.privateRegistry.enabled }}
       imagePullSecrets:
-        - name: {{ printf "%s-docker-registry" .Values.deployment.name }}
-      {{ end }}
-      {{ if .Values.spreadConstraints.enabled }}
+        - name: {{ .Values.privateRegistry.secretName }}
+      {{- end }}
+      {{- if .Values.spreadConstraints.enabled }}
       topologySpreadConstraints:
         - maxSkew: {{ .Values.spreadConstraints.maxSkew }}
           topologyKey: {{ .Values.spreadConstraints.nodeLabel }}
@@ -31,40 +31,44 @@ spec:
           labelSelector:
             matchLabels:
               app: {{ .Values.deployment.name }}
-      {{ end }}
+      {{- end }}
       nodeSelector:
         "kubernetes.io/os": linux
-      {{ if .Values.database.migration }}
+      {{- if .Values.database.migration }}
       initContainers:
         - name: migration
           image: {{ .Values.deployment.image.repositoryUrl }}/{{.Values.deployment.image.name}}:migration-{{.Values.deployment.image.tag}}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy | default "IfNotPresent" }}
-          {{ if .Values.initDebug.enabled }}
+          {{- if .Values.initDebug.enabled }}
           command: ["sh", "-c", "ls -al && sleep 3600"]
-          {{ end }}
+          {{- end }}
           env:
-          {{ if .Values.initEnv.enabled }}
-          {{ range .Values.initEnv.envLists }}
-          {{ if .valueFrom }}
+          {{- if .Values.initEnv.enabled }}
+          {{- range .Values.initEnv.envLists }}
+          {{- if .valueFrom }}
+          {{- if .valueFrom.secretKeyRef }}
+          {{- if and .valueFrom.secretKeyRef.key .valueFrom.secretKeyRef.secretName }}
           - name: {{ .envName }}
             valueFrom:
               secretKeyRef:
-                name: {{ $.Values.deployment.name }}-{{ .valueFrom.secretKeyRef.secretName }}
+                name: {{ printf "%s-%s" $.Values.deployment.name .valueFrom.secretKeyRef.secretName }}
                 key: {{ .valueFrom.secretKeyRef.key }}
-          {{ end }}
-          {{ if .value }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if .value }}
           - name: {{ .envName }}
             value: {{ quote .value }}
-          {{ end }}
-          {{ end }}
-          {{ end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
           volumeMounts:
           {{ if .Values.initExtraVolumeMounts }}
           {{ toYaml $.Values.initExtraVolumeMounts | nindent 12}}
           {{ end }}
       {{ end }}
       containers:
-      {{ if .Values.promtail.enabled }}
+      {{- if .Values.promtail.enabled }}
         - name: promtail-sidecar
           image: {{ .Values.promtail.image | default "grafana/promtail:3.2.1" }}
           args:
@@ -72,11 +76,11 @@ spec:
           volumeMounts:
             - name: promtail-config
               mountpath: /mnt/config
-      {{ end }}
+      {{- end }}
         - name: {{ .Values.deployment.name }}-app
           image: {{ .Values.deployment.image.repositoryUrl }}/{{.Values.deployment.image.name}}:{{.Values.deployment.image.tag}}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy | default "IfNotPresent" }}
-          {{ if .Values.livenessProbe.enabled }}
+          {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
               path: {{ .Values.livenessProbe.path | default "/health" }}
@@ -86,8 +90,8 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 3
             # This will continuously check the health check 3 times, each time for 10s in total 30s before the pod restart
-          {{ end }}
-          {{ if .Values.readinessProbe.enabled }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             httpGet:
               path: {{ .Values.readinessProbe.path | default "/health" }}
@@ -97,102 +101,59 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 3
             # This will continuously check the health check 3 times, each time for 30s in total 1 minute before the pod deem not ready
-          {{ end }}
-          {{ if .Values.resources.enabled }}
+          {{- end }}
+          {{- if .Values.resources.enabled }}
           resources:
             limits:
               memory: {{.Values.resources.memoryLimit}}
             requests:
               memory: {{.Values.resources.memoryRequest}}
-          {{ end }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.container.port }}
               protocol: TCP
+          {{- if and .Values.serviceEnv.enabled .Values.serviceEnv.envFrom }}
+          envFrom:
+          - secretRef:
+              name: {{ .Values.serviceEnv.envFrom }}
+          {{- end }}
           env:
           - name: PodName
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          {{ if .Values.redisCredential.enabled }}
-          - name: REDIS_HOST
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.deployment.name }}-redis-secrets
-                key: REDIS_HOST
-          - name: REDIS_PORT
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.deployment.name }}-redis-secrets
-                key: REDIS_PORT
-          - name: REDIS_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.deployment.name }}-redis-secrets
-                key: REDIS_USERNAME
-          - name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.deployment.name }}-redis-secrets
-                key: REDIS_PASSWORD
-          {{ end }}
-          # {{ if .Values.database.credentials.enabled }}
-          # - name: DATABASE_HOST
-          #   valueFrom:
-          #     secretKeyRef:
-          #       name: {{ .Values.deployment.name }}-db-credentials
-          #       key: DATABASE_HOST
-          # - name: DATABASE_PORT
-          #   valueFrom:
-          #     secretKeyRef:
-          #       name: {{ .Values.deployment.name }}-db-credentials
-          #       key: DATABASE_PORT
-          # - name: DATABASE_NAME
-          #   valueFrom:
-          #     secretKeyRef:
-          #       name: {{ .Values.deployment.name }}-db-credentials
-          #       key: DATABASE_NAME
-          # - name: DATABASE_USERNAME
-          #   valueFrom:
-          #     secretKeyRef:
-          #       name: {{ .Values.deployment.name }}-db-credentials
-          #       key: DATABASE_USERNAME
-          # - name: DATABASE_PASSWORD
-          #   valueFrom:
-          #     secretKeyRef:
-          #       name: {{ .Values.deployment.name }}-db-credentials
-          #       key: DATABASE_PASSWORD
-          # {{ end }}
-          {{ if and .Values.secret.autoGenEnv .Values.secret.enabled  }}
-          {{ range .Values.secret.secretLists }}
-          {{- /*
-          ###### Save the outer context
-          */}}
-          {{ $secret := . }}
-          {{ range $key, $value := $secret.data }}
+          {{- if and .Values.secret.autoGenEnv .Values.secret.enabled }}
+          {{- range .Values.secret.secretLists }}
+          {{ $secret := . }} {{- /* # <-- Save the outer context */ -}}
+          {{- range $key, $value := $secret.data }}
           - name: {{ $key }}
             valueFrom:
               secretKeyRef:
-                name: {{ $.Values.deployment.name }}-{{ $secret.name }}
+                name: {{ printf "%s-%s" $.Values.deployment.name ($secret.name) }}
                 key: {{ $key }}
-          {{ end }}
-          {{ end }}
-          {{ end }}
-          {{ if .Values.serviceEnv.enabled }}
-          {{ range .Values.serviceEnv.envLists }}
-          {{ if .valueFrom }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.serviceEnv.enabled }}
+          {{- range .Values.serviceEnv.envLists }}
+          {{- if .valueFrom }}
+          {{- if .valueFrom.secretKeyRef }}
+          {{- if and .valueFrom.secretKeyRef.key .valueFrom.secretKeyRef.secretName }}
           - name: {{ .envName }}
             valueFrom:
               secretKeyRef:
-                name: {{ $.Values.deployment.name }}-{{ .valueFrom.secretKeyRef.secretName }}
+                name: {{ printf "%s-%s" $.Values.deployment.name .valueFrom.secretKeyRef.secretName }}
                 key: {{ .valueFrom.secretKeyRef.key }}
-          {{ end }}
-          {{ if .value }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if .value }}
           - name: {{ .envName }}
             value: {{ quote .value }}
-          {{ end }}
-          {{ end }}
-          {{ end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
           volumeMounts:
           {{ if .Values.configMaps.enabled }}
           {{ if .Values.configMaps.keyBase.enabled }}
