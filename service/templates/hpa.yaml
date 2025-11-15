@@ -1,0 +1,45 @@
+{{- if .Values.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.deployment.name }}
+  labels:
+    app: {{ .Values.deployment.name }}
+  {{- if .Values.hpa.annotations }}
+  {{ toYaml .Values.hpa.annotations | nindent 2 }}
+  {{- end }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.deployment.name }}
+  {{- if and .Values.hpa.minReplicas .Values.hpa.maxReplicas  }}
+  minReplicas: {{ .Values.hpa.minReplicas }}
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  {{- else }}
+      {{ fail ".Values.hpa.minReplicas and .Values.hpa.maxReplicas are required values to enable HPA"  }}
+  {{- end }}
+  {{- if or .Values.hpa.metrics.cpu.enabled .Values.hpa.metrics.memory.enabled }}
+  metrics:
+    {{- if .Values.hpa.metrics.cpu.enabled }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.metrics.cpu.targetCPUUtilizationPercentage | default 80 }}
+    {{- end }}
+    {{- if .Values.hpa.metrics.memory.enabled }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.metrics.memory.targetMemoryUtilizationPercentage | default 80 }}
+    {{- end }}
+  {{- if .Values.hpa.metrics.behavior }}
+  behavior:
+    {{- toYaml .Values.hpa.metrics.behavior | nindent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
