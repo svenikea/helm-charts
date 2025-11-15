@@ -3,40 +3,61 @@ kind: Ingress
 metadata:
   name: {{ printf "%s-ingress" .Values.deployment.name }}
   annotations:
-    {{ if .Values.certManager.enabled }}
+    {{- if .Values.certManager.enabled }}
     cert-manager.io/issuer: {{ printf "%s-issuer" .Values.deployment.name }}
-    {{ end }}
-    {{ if .Values.ingress.annotations }}
-    {{ .Values.ingress.annotations | toYaml | nindent 4 }}
-    {{ end }}
+    {{- end }}
+    {{- if .Values.ingress.annotations }}
+    {{- .Values.ingress.annotations | toYaml | nindent 4 }}
+    {{- end }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
-    {{ if .Values.ingress.s3Behavior }}
-      more_set_headers "X-Frame-Options: DENY";
-      more_set_headers "X-Content-Type-Options: nosniff";
-      more_set_headers "X-XSS-Protection: 1; mode=block";
-      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+    {{- if .Values.ingress.s3Behavior.enabled }}
+      proxy_intercept_errors on;
       set $bucket "";
-      if ($host ~* "^(?<bucket>[^.]+){{ include "escapeDots" .Values.ingress.hostName }}") {
+      # capture the first (subdomain) segment into a named capture "bucket"
+      {{- if .Values.ingress.hostName }}
+      {{- $suffix := include "s3.hostSuffix" (dict "host" .Values.ingress.hostName) }}
+      if ($host ~* "^(?<bucket>[^.]+){{ printf "\\.%s" (include "escapeDots" $suffix) }}") {
         set $bucket $bucket;
       }
+      {{- end }}
 
-      # Only rewrite if $bucket is set (non-empty)
+      # capture from any host in hostNames (if provided)
+      {{- if .Values.ingress.hostNames }}
+      {{- range $h := .Values.ingress.hostNames }}
+      {{- $suffix := include "s3.hostSuffix" (dict "host" $h) }}
+      if ($host ~* "^(?<bucket>[^.]+){{ printf "\\.%s" (include "escapeDots" $suffix) }}") {
+        set $bucket $bucket;
+      }
+      {{- end }}
+      {{- end }}
+
+      {{- if .Values.ingress.s3Behavior.spa.enabled }}
+      # If root path "/" is requested, rewrite to index.html inside the bucket
+      # $request_uri is different from $uri; using $uri avoids oauth redirect token issues
+      if ($uri = "/") {
+        rewrite ^ /$bucket/index.html break;
+      }
+      # Handle 404/403/400 by returning index.html so SPA / s3 static hosting works
+      error_page 403 404 400 = /index.html;
+      {{- end }}
+
+      # Rewrite all other requests to /$bucket/<path>
       if ($bucket != "") {
         rewrite ^/(.*)$ /$bucket/$1 break;
       }
-    {{ end }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules: {{ .Values.ingress.rules | toYaml | nindent 4 }}
-  {{ if .Values.certManager.enabled }}
+  {{- if .Values.certManager.enabled }}
   tls:
-  {{ if .Values.ingress.hostName }}
+  {{- if .Values.ingress.hostName }}
     - hosts:
         - {{ .Values.ingress.hostName }}
-  {{ end }}
-  {{ if .Values.ingress.hostNames }}
+  {{- end }}
+  {{- if .Values.ingress.hostNames }}
     - hosts:
         {{ .Values.ingress.hostNames | toYaml | nindent 8 }}
-  {{ end }}
+  {{- end }}
       secretName: {{ printf "%s-ingress-secret" .Values.deployment.name }}
-  {{ end }}
+  {{- end }}
