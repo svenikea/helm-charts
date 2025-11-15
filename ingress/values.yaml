@@ -1,12 +1,15 @@
 deployment:
-  name: ""
+  name: "default"
 
 ingress:
   hostName: ""
   hostNames: "" # <-- This is a list of hostnames for the ingress
   ingressClassName: ""
   annotations: {}
-  s3Behavior: false
+  s3Behavior:
+    enabled: true
+    spa:
+      enabled: false
   rules:
 
 certManager:
