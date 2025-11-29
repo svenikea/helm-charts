@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.configMaps.keyBase.configName }}
-data: {{ toYaml .Values.configMaps.keyBase.content | nindent 2 }}
+data: {{- toYaml .Values.configMaps.keyBase.content | nindent 2 }}
 ---
 {{ end }}
 
@@ -16,7 +16,7 @@ metadata:
  name: {{ .name }}
 data:
   {{ .subPath }}: |
-    {{ .data | nindent 4 }}
+    {{- .data | nindent 4 }}
 ---
 {{ end }}
 {{ end }}

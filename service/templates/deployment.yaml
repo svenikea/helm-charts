@@ -67,10 +67,10 @@ spec:
           {{- end }}
           {{- end }}
           volumeMounts:
-          {{ if .Values.initExtraVolumeMounts }}
-          {{ toYaml $.Values.initExtraVolumeMounts | nindent 12}}
-          {{ end }}
-      {{ end }}
+          {{- if .Values.initExtraVolumeMounts }}
+          {{- toYaml $.Values.initExtraVolumeMounts | nindent 12 }}
+          {{- end }}
+      {{- end }}
       containers:
       {{- if .Values.promtail.enabled }}
         - name: promtail-sidecar
@@ -93,7 +93,9 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 1
             failureThreshold: 3
+            {{- /*
             # This will continuously check the health check 3 times, each time for 10s in total 30s before the pod restart
+            */}}
           {{- end }}
           {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
@@ -104,7 +106,9 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 1
             failureThreshold: 3
+            {{- /*
             # This will continuously check the health check 3 times, each time for 30s in total 1 minute before the pod deem not ready
+            */}}
           {{- end }}
           {{- if .Values.resources.enabled }}
           resources:
@@ -159,50 +163,50 @@ spec:
           {{- end }}
           {{- end }}
           volumeMounts:
-          {{ if .Values.configMaps.enabled }}
-          {{ if .Values.configMaps.keyBase.enabled }}
+          {{- if .Values.configMaps.enabled }}
+          {{- if .Values.configMaps.keyBase.enabled }}
             - name: {{ .Values.configMaps.keyBase.volumeName }}
               mountPath: {{ .Values.configMaps.keyBase.mountPath }}
               subPath: {{ .Values.configMaps.keyBase.subPath }}
-          {{ end }}
-          {{ range .Values.configMaps.extraConfigFile.files }}
+          {{- end }}
+          {{- range .Values.configMaps.extraConfigFile.files }}
             - name: {{ .volumeName }}
               mountPath: {{ .mountPath }}
               subPath: {{ .subPath }}
-          {{ end }}
-          {{ end }}
-          {{ if .Values.extraVolumeMounts }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.extraVolumeMounts }}
           {{ toYaml .Values.extravolumeMounts | nindent 12}}
-          {{ end }}
-        {{ if .Values.extraContainer.enabled }}
-        {{ range .Values.extraContainer.containers }}
+          {{- end }}
+        {{- if .Values.extraContainer.enabled }}
+        {{- range .Values.extraContainer.containers }}
         {{ toYaml .Values.extraContainer.containers | nindent 8 }}
-        {{ end }}
-        {{ end }}
+        {{- end }}
+        {{- end }}
       volumes:
-      {{ if .Values.promtail.enabled }}
+      {{- if .Values.promtail.enabled }}
         - name: promtail-config
           configMap:
             name: promtail-config
-      {{ end}}
-      {{ if .Values.configMaps.enabled }}
-      {{ if .Values.configMaps.keyBase.enabled }}
+      {{- end}}
+      {{- if .Values.configMaps.enabled }}
+      {{- if .Values.configMaps.keyBase.enabled }}
         - name: {{ .volumeName }}
           configMap:
             name: {{ .Values.configMaps.keyBase.configName }}
-      {{ end }}
-      {{ range .Values.configMaps.extraConfigFile.files }}
+      {{- end }}
+      {{- range .Values.configMaps.extraConfigFile.files }}
         - name: {{ .volumeName }}
           configMap:
             name: {{ .name }}
-      {{ end }}
-      {{ end }}
-      {{ if .Values.extraVolumes }}
-      {{ toYaml .Values.extraVolumes | nindent 8}}
-      {{ end }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.extraVolumes }}
+      {{- toYaml .Values.extraVolumes | nindent 8}}
+      {{- end }}
       {{- /*
       #### Remember to delete this stupid section when you are done with the dev BS
       */}}
-      {{ if .Values.initExtraVolumes }}
-      {{ toYaml .Values.initExtraVolumes | nindent 8}}
-      {{ end }}
+      {{- if .Values.initExtraVolumes }}
+      {{- toYaml .Values.initExtraVolumes | nindent 8}}
+      {{- end }}
