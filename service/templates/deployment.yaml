@@ -3,7 +3,11 @@ kind: Deployment
 metadata:
   name: {{ .Values.deployment.name }}
 spec:
+  {{- if and .Values.deployment.scale .Values.hpa.enabled }}
+    {{- fail ".Values.deployment.scale must be null and Values.hpa.enable can't be set to true" }}
+  {{- else if .Values.deployment.scale }}
   replicas: {{ .Values.deployment.scale }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Values.deployment.name }}

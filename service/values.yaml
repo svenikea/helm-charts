@@ -1,7 +1,7 @@
 # Deployment values
 deployment:
   name:
-  scale: 1
+  scale:
   image:
     name: service
     tag: latest
