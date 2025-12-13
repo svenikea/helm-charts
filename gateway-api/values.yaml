@@ -1,0 +1,47 @@
+deployment:
+  name:
+gateway:
+  httpsListener:
+  httpsListenerPort:
+  httpListener:
+  httpListenerPort:
+  customHeaders:
+  cors:
+    enabled: false
+    originLists:
+    methodLists:
+      - "GET"
+      - "OPTIONS"
+      - "PUT"
+      - "POST"
+  traefik:
+    enabled: false
+  httpRoute:
+    enabled: false
+    namespace:
+    sslRedirect:
+      enabled: false
+  customGateway:
+    enabled: false
+  gatewayName:
+  sharedIPAddress:
+  annotations:
+  gatewayClassName:
+  hostName:
+  hostNames:
+  tlsMode:
+  rules:
+
+certManager:
+  enabled: false
+  namespace:
+  email:
+  customIssuerServer:
+  privateKeySecretRef:
+  http01:
+    enabled: false
+  dns01:
+    cloudflare:
+      enabled: false
+      apiTokenSecretName:
+      apiTokenSecretKey:
