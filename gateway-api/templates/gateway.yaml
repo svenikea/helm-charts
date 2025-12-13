@@ -1,0 +1,78 @@
+{{- $traefik := .Values.gateway.traefik.enabled }}
+{{- if .Values.gateway.customGateway.enabled }}
+{{- if .Values.gateway.hostName }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ printf "%s-gateway" .Values.deployment.name | default "default" }}
+  annotations:
+    {{- if .Values.certManager.enabled }}
+    cert-manager.io/issuer: {{ printf "%s-issuer" .Values.deployment.name }}
+    {{- end }}
+    {{- if .Values.gateway.annotations }}
+    {{- .Values.gateway.annotations | toYaml | nindent 4 }}
+    {{- end }}
+spec:
+  {{- /*https://github.com/istio/istio/discussions/52904*/}}
+  addresses:
+  {{- if .Values.gateway.sharedIPAddress }}
+  - value: {{ .Values.gateway.sharedIPAddress }}
+    type: IPAddress
+  {{- end }}
+  gatewayClassName: {{ .Values.gateway.gatewayClassName | default "gateway-api" }}
+  listeners:
+  - name: {{ include "gw.httpListenerName" . }}
+    protocol: HTTP
+    port: {{ include "gw.httpListenerPort" . }}
+    hostname: {{ .Values.gateway.hostName }}
+  {{- if .Values.gateway.httpRoute.sslRedirect.enabled }}
+  - name: {{ include "gw.httpsListenerName" . }}
+    protocol: HTTPS
+    port: {{ include "gw.httpsListenerPort" . }}
+    hostname: {{ .Values.gateway.hostName }}
+    tls:
+      certificateRefs:
+        - name: {{ printf "%s-issuer" .Values.deployment.name }}
+      mode: {{ .Values.gateway.tlsMode }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.gateway.hostNames }}
+{{- range $index, $host := $.Values.gateway.hostNames }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ printf "%s-gateway-%d" $.Values.deployment.name ($index | add1) | default "default" }}
+  annotations:
+    {{- if $.Values.certManager.enabled }}
+    cert-manager.io/issuer: {{ printf "%s-issuer" $.Values.deployment.name }}
+    {{- end }}
+    {{- if $.Values.gateway.annotations }}
+    {{- $.Values.gateway.annotations | toYaml | nindent 4 }}
+    {{- end }}
+spec:
+  {{- /*https://github.com/istio/istio/discussions/52904*/}}
+  addresses:
+  {{- if $.Values.gateway.sharedIPAddress }}
+  - value: {{ $.Values.gateway.sharedIPAddress }}
+    type: IPAddress
+  {{- end }}
+  gatewayClassName: {{ $.Values.gateway.gatewayClassName | default "gateway-api" }}
+  listeners:
+  - name: {{ include "gw.httpListenerName" $ }}
+    protocol: HTTP
+    port: {{ include "gw.httpListenerPort" $ }}
+    hostname: {{ $host }}
+  {{- if $.Values.gateway.httpRoute.sslRedirect.enabled }}
+  - name: {{ include "gw.httpsListenerName" $ }}
+    protocol: HTTPS
+    port: {{ include "gw.httpsListenerPort" $ }}
+    hostname: {{ $host }}
+    tls:
+      certificateRefs:
+        - name: {{ printf "%s-issuer" $.Values.deployment.name }}
+      mode: {{ $.Values.gateway.tlsMode }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,29 @@
+{{ if .Values.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ printf "%s-issuer" .Values.deployment.name }}
+  namespace: {{ .Values.certManager.namespace }}
+spec:
+  acme:
+    email: {{ .Values.certManager.email }}
+    server: {{ .Values.certManager.customIssuerServer | default "https://acme-v02.api.letsencrypt.org/directory" }}
+    privateKeySecretRef:
+      name: {{ .Values.certManager.privateKeySecretRef }}
+    solvers:
+    {{- if .Values.certManager.http01.enabled }}
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: {{ printf "%s-gateway" .Values.deployment.name | default "default" }}
+                namespace: {{ .Release.Namespace }}
+                kind: Gateway
+    {{- end }}
+    {{- if .Values.certManager.dns01.cloudflare.enabled }}
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: {{ .Values.certManager.dns01.cloudflare.apiTokenSecretName }}
+              key: {{ .Values.certManager.dns01.cloudflare.apiTokenSecretKey }}
+    {{- end }}
+{{ end }}

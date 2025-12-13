@@ -1,0 +1,26 @@
+{{- if and .Values.gateway.traefik.enabled .Values.gateway.cors.enabled }}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ printf "%s-cors" .Values.deployment.name }}
+spec:
+  headers:
+    accessControlAllowMethods:
+    {{- .Values.gateway.cors.methodLists | toYaml | nindent 6 }}
+    accessControlAllowHeaders:
+      - "*"
+    accessControlAllowOriginList:
+    {{- .Values.gateway.cors.originLists | toYaml | nindent 6 }}
+    accessControlMaxAge: 100
+    addVaryHeader: true
+{{- end }}
+{{- if and .Values.gateway.traefik.enabled .Values.gateway.customHeaders }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ printf "%s-custom-headers" .Values.deployment.name }}
+spec:
+  headers:
+    {{- toYaml .Values.gateway.customHeaders | nindent 4 }}
+{{- end }}
