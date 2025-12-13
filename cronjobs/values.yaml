@@ -1,0 +1,27 @@
+deployment:
+  name:
+
+schedule:
+
+privateRegistry:
+  secretName:
+
+defaultImage:
+
+database:
+  backup:
+    enabled: false
+    location:
+      aws:
+        enabled: false
+        awsSecret:
+        region:
+        s3Bucket:
+    databases:
+      - postgres: false
+        postgresImage:
+        mysql: false
+        imagePullSecrets: false
+        mysqlImage:
+        env:
+        vps: false

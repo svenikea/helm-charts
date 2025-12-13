@@ -1,0 +1,59 @@
+{{- if .Values.database.backup.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sql-backup-script
+data:
+  backup.sh: |
+    #!/bin/sh
+    set -euo pipefail
+    if [ ${VPS} == "true" ]; then
+    TIMEOUT=60
+    START_TIME=$(date +%s)
+    until nc -z ${DATABASE_HOST} ${DATABASE_PORT}; do
+      CURRENT_TIME=$(date +%s)
+      ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+      if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
+        echo "Timeout reached. Port ${DATABASE_PORT} not open after $TIMEOUT seconds."
+        exit 1
+      fi
+      echo "Waiting for ${DATABASE_HOST}:${DATABASE_PORT}... ($ELAPSED_TIME seconds elapsed)"
+      sleep 1
+    done
+    fi
+    DATE="$(date +%F_%H-%M-%S)"
+    PREFIX="${S3_PREFIX:-backups}/${DB_ENV}"
+    DEST="/tmp/${DATABASE_NAME}_${DATE}.sql.gz"
+    echo "[backup] starting pg_dump of ${DATABASE_HOST}/${DATABASE_NAME} …"
+    # Use custom format? Replace with: pg_dump -Fc > file.dump
+    if [ ${DATABASE_TYPE} == "postgresql" ]; then
+      export PGPASSWORD="${DATABASE_PASSWORD}"
+      pg_dump \
+        -h "${DATABASE_HOST}" \
+        -p "${DATABASE_PORT}" \
+        -U "${DATABASE_USERNAME}" \
+        -d "${DATABASE_NAME}" \
+        | gzip -c > "${DEST}"
+      echo "[backup] dump complete: ${DEST} ($(du -h "${DEST}" | cut -f1))"
+    elif [ ${DATABASE_TYPE} == "mysql" ]; then
+      mysqldump \
+        -h "${DATABASE_HOST}" \
+        -u  "${DATABASE_USERNAME}" \
+        -p"${DATABASE_PASSWORD}" \
+        "${DATABASE_NAME}" \
+        | gzip -c > "${DEST}"
+      echo "[backup] dump complete: ${DEST} ($(du -h "${DEST}" | cut -f1))"
+    else
+      echo "No recognizable database"
+      exit 1
+    fi
+    {{- if $.Values.database.backup.location.aws.enabled }}
+    S3_URI="s3://${S3_BUCKET}/${PREFIX}/${DATABASE_NAME}_${DATE}.sql.gz"
+    echo "[backup] uploading to ${S3_URI} (region ${AWS_REGION}) …"
+    aws s3 cp "${DEST}" "${S3_URI}" --region "${AWS_REGION}"
+    {{- end }}
+    echo "[backup] upload complete."
+    if [ ${VPS} == "true" ]; then
+      touch /shared/done
+    fi
+{{- end }}
