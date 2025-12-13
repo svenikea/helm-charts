@@ -1,0 +1,123 @@
+{{- if .Values.database.backup.enabled }}
+{{- range .Values.database.backup.databases }}
+{{- $sanitizedDB := replace "_" "-" .database }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ printf "%s-%s-backup" $sanitizedDB $.Values.deployment.name }}
+spec:
+  schedule: {{ $.Values.schedule | default "0 2 * * *" }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          {{- if $.Values.privateRegistry.enabled }}
+          imagePullSecrets:
+            - name: {{ $.Values.privateRegistry.secretName | default "global-image-pull-secret" }}
+          {{- end }}
+          restartPolicy: OnFailure
+          containers:
+            {{- $image := "" }}
+            {{- if .postgresImage }}
+              {{- $image = .postgresImage | quote }}
+            {{- else if .mysqlImage }}
+              {{- $image = .mysqlImage | quote }}
+            {{- else }}
+              {{- $image = $.defaultImage | default "registry.volcanly.work/common/cronjobs:v1.0.0" | quote }}
+            {{- end }}
+            - name: backup-job
+              image: {{ $image }}
+              imagePullPolicy: IfNotPresent
+              command: ["sh", "-c"]
+              args:
+                - apk add --no-cache aws-cli netcat-openbsd && /scripts/backup.sh
+              env:
+                {{- $dbType := "" }}
+                {{- if .postgres }}
+                  {{- $dbType = "postgresql" | quote }}
+                {{- else if .mysql }}
+                  {{- $dbType = "mysql" | quote }}
+                {{- else }}
+                  {{- $dbType = "sql" | quote }}
+                {{- end }}
+                {{- if .vps }}
+                - name: DATABASE_HOST
+                  value: "127.0.0.1"
+                - name: VPS
+                  value: "true"
+                {{- else }}
+                - name: VPS
+                  value: "false"
+                {{- end }}
+                - name: DATABASE_TYPE
+                  value: {{ $dbType }}
+                - name: DB_ENV
+                  value: {{ .env | default "dev" }}
+                {{- if $.Values.database.backup.location.aws.enabled }}
+                - name: AWS_REGION
+                  value: {{ $.Values.database.backup.location.aws.region }}
+                - name: S3_BUCKET
+                  value: {{ $.Values.database.backup.location.aws.s3Bucket | default "du-clients-db-backup " }}
+                - name: S3_PREFIX
+                  value: {{ $sanitizedDB }}
+                {{- end }}
+              envFrom:
+                - secretRef:
+                    name: {{ printf "%s-onepassword-secret-fetcher" $.Values.deployment.name }}
+                {{- if $.Values.database.backup.location.aws.enabled }}
+                - secretRef:
+                    name: {{ $.Values.database.backup.location.aws.awsSecret }}
+                {{- end }}
+              volumeMounts:
+                - name: backup-script
+                  mountPath: /scripts
+                  readOnly: true
+            {{- if .vps }}
+                - mountPath: /shared
+                  name: shared-signal
+            {{- end }}
+            {{- if .vps }}
+            - name: ssh-tunnel
+              image: registry.volcanly.work/du/git:latest
+              command: ["sh", "-c"]
+              args:
+                - |
+                  {{- include "ssh-tunneling" . | nindent 18 }}
+              volumeMounts:
+                - name: {{ printf "%s-ssh-auth" $sanitizedDB }}
+                  mountPath: /root/.ssh/id_rsa
+                  subPath: ssh-privatekey
+                  readOnly: true
+                - mountPath: /shared
+                  name: shared-signal
+              env:
+                - name: SERVER_IP
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ printf "%s-onepassword-secret-fetcher" $.Values.deployment.name }}
+                      key: SERVER_IP
+                - name: SERVER_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ printf "%s-onepassword-secret-fetcher" $.Values.deployment.name }}
+                      key: SERVER_USER
+            {{- end }}
+          volumes:
+            - name: backup-script
+              configMap:
+                name: sql-backup-script
+                defaultMode: 0755
+          {{- if .vps }}
+            - name: {{ printf "%s-ssh-auth" $sanitizedDB }}
+              secret:
+                secretName: {{ printf "%s-auth-secret" $.Values.deployment.name }}
+                defaultMode: 0600
+            - name: shared-signal
+              emptyDir: {}
+          {{- end }}
+---
+{{- end }}
+{{- end }}
