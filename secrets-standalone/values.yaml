@@ -62,6 +62,10 @@ externalSecret:
     connectServer: false
     connectHost: ""
     sdk: false
+    sshKey:
+      enabled: false
+      keyName:
+      item: ""
     tokenKey: ""
     vaultName: ""
     tokenName: ""
