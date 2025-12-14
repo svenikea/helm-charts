@@ -23,6 +23,13 @@ gateway:
       enabled: false
   customGateway:
     enabled: false
+  s3Behavior:
+    enabled: false
+    s3Service:
+    s3Port:
+    bucketName: ""
+    spa:
+      enabled: false
   gatewayName:
   sharedIPAddress:
   annotations:
